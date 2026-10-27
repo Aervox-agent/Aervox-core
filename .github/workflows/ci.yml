@@ -1,0 +1,24 @@
+name: Core CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v3
+      - name: Install locked development dependencies
+        run: mise exec -- pnpm install --frozen-lockfile
+      - name: Build JavaScript and public declarations
+        run: mise exec -- pnpm build
+      - name: Typecheck the kernel
+        run: mise exec -- pnpm typecheck
+      - name: Test the kernel and browser declaration boundary
+        run: mise exec -- pnpm test

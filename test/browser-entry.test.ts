@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createContext, runInContext } from "node:vm";
 import * as browser from "../src/browser.js";
@@ -11,6 +12,7 @@ import * as node from "../src/index.js";
 import * as lightweight from "../src/core.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
+const compiler = join(dirname(createRequire(import.meta.url).resolve("typescript/package.json")), "bin/tsc");
 const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 // Exercise the source that emits the public JS/declaration targets, without
 // requiring dist or mutating another build's output during unit tests.
@@ -73,7 +75,7 @@ describe("browser public entry", () => {
         },
         files: [publicSource("types")],
       }));
-      execFileSync(process.execPath, [fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url)), "-p", config], { stdio: "pipe" });
+      execFileSync(process.execPath, [compiler, "-p", config], { stdio: "pipe" });
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });
