@@ -331,6 +331,8 @@ export interface SubagentPort {
 export interface AskUserQuestionPortRequest {
   turnId: string;
   attemptId: string;
+  /** Original tool invocation identity; hosts use it for durable question receipts. */
+  invocationId?: string;
   step: number;
   questions: AskUserQuestionItem[];
   signal?: AbortSignal;

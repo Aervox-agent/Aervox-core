@@ -116,6 +116,7 @@ describe("user-question-tool", () => {
     expect(capturedRequest).toMatchObject({
       turnId: "turn_1",
       attemptId: "atp_1",
+      invocationId: "atp_1:2:1",
       step: 2,
       questions: [
         {
