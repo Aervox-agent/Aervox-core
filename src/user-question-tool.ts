@@ -181,6 +181,7 @@ export function createAskUserQuestionToolProvider(
         const res = await userQuestionPort.ask({
           turnId: input.turnId,
           attemptId: input.attemptId,
+          invocationId: input.invocationId,
           step,
           questions,
           timeoutMs: defaultTimeoutMs,
