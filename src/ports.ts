@@ -3,6 +3,11 @@
  *
  * Loop 应用层只依赖本端口，不得导入 Drizzle/@libsql 或具体 SQLite 类（AVX-HAR-001 §15 阶段 0）。
  * 宿主持有实现：生产走 @aervox/repositories 仓储适配，测试走内存实现。
+ *
+ * 本文件同时是公开的 `@aervox/core/ports` 入口：宿主实现端口时只取契约，
+ * 不必连带加载执行器、Provider 与内存实现。因此它自包含地再导出 `types.ts`
+ * 与 `errors.ts`——前者是被这些端口引用的负载类型，后者是实现在拒绝写入时
+ * 必须抛出的契约错误（LeaseLostError），漏掉任一项都会让实现方被迫引入整包。
  */
 import type {
   AgentInboxCommand,
@@ -399,3 +404,9 @@ export type {
   WorkflowStep,
   WorkflowStepResult,
 } from "./types.js";
+// The ports above are declared in terms of these payload types, so a host that
+// imports only the contract entry must receive them too.
+export * from "./types.js";
+// Contract error a store implementation must throw when its fencing CAS rejects
+// a write; without it the implementation cannot honour the port.
+export * from "./errors.js";
