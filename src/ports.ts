@@ -192,11 +192,10 @@ export interface ExecutionStorePort {
   /** E2：读取 Turn 的已提交安全片段（可见前缀；sequence 升序）。缺省实现返回空（宿主未接时透传）。 */
   listCommittedSegments?(turnId: string): Promise<Array<{ id: string; sequence: number; text: string; streamEventId: string | null }>>;
 
-  /** BTD-05 / ITER-007：更新所属 Turn 状态（由宿主账本落地） */
-  updateTurnStatus?(input: {
-    turnId: string;
-    status: "Completed" | "Failed" | "Interrupted";
-  }): Promise<void>;
+  // `updateTurnStatus` 曾在此声明，但内核从不调用它，全仓也没有消费者，且只有
+  // 内存实现提供过它——SQLite 实现必须实现一个没人调用的方法才能"满足"端口。
+  // 契约套件补齐覆盖时确认了这一点，故移除，使端口只保留真实被使用或读回的语义。
+  // Turn 状态由宿主的 Turn 域仓储自行维护（repositories 的同名方法签名与职责都不同）。
 }
 
 /** State/event ledger only; tool outcomes and model telemetry remain separate execution capabilities. */

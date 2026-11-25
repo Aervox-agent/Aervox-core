@@ -11,8 +11,12 @@
  * `test/execution-store-contract.test.ts` 的 vitest 适配。
  *
  * 覆盖范围刻意只包含**跨实现必须一致**的语义：claim 与 fencing CAS、事件序号与
- * 可见前缀、幂等预留、终态单一性、取消位。实现细节（如内存实现的模拟抢占方法）
- * 不在本套件内。
+ * 版本、可见前缀读写、批次 all-or-none、幂等预留与收口、终态单一性、终态与收尾
+ * 事件原子提交、取消位。实现细节（如内存实现的模拟抢占方法）不在本套件内。
+ *
+ * 本套件已发现两处真实分歧，均以契约为准修正：
+ * 1. SQLite 对已 Cancelled 的 Attempt 请求取消失败返回成功（违反 ports.ts §11.1）；
+ * 2. 内存实现从未实现 `listCommittedSegments`，读取方会拿到空列表并静默丢失已提交正文。
  */
 import type {
   AgentStreamEventInput,
@@ -189,6 +193,86 @@ export function executionStoreContract(): readonly StoreContractCase[] {
         // reason 属于实现细节：内存实现能区分 not_runnable / already_claimed，
         // SQLite 在缺行时同样只给出拒绝。契约只强制"必须拒绝"，不强求 reason 取值。
         if (!result.ok) assert.ok(result.reason.length > 0, "拒绝必须给出 reason");
+      },
+    },
+    {
+      name: "安全片段写入后可从可见前缀读回（listCommittedSegments）",
+      async run(store, { assert, seedAttempt }) {
+        await seedAttempt({ turnId: "t_seg", attemptId: "a_seg" });
+        const claim = await store.claimTurnAttempt({ turnId: "t_seg", attemptId: "a_seg", expectedFencingToken: 0 });
+        assert.equal(claim.ok, true);
+        if (!claim.ok) return;
+        for (const sequence of [1, 2]) {
+          await store.recordSafeSegment({
+            turnId: "t_seg",
+            attemptId: "a_seg",
+            sequence,
+            text: `片段${sequence}`,
+            eventData: { text: `片段${sequence}`, isFinal: false },
+            safetyDecision: "approved",
+            expectedFencingToken: claim.fencingToken,
+          });
+        }
+        // ports.ts：可见前缀必须可读回，且按 sequence 升序。宿主未实现该方法时
+        // 读取方看到空列表，会静默丢失已提交正文——这是必须一致的核心语义。
+        assert.ok(typeof store.listCommittedSegments === "function", "必须实现 listCommittedSegments（ports.ts E2）");
+        if (typeof store.listCommittedSegments !== "function") return;
+        const segments = await store.listCommittedSegments("t_seg");
+        assert.equal(segments.length, 2, "两条安全片段都必须可读回");
+        assert.equal(segments.map(s => s.sequence).join(","), "1,2", "可见前缀必须按 sequence 升序");
+        assert.equal(segments.map(s => s.text).join(","), "片段1,片段2", "读回的正文必须与写入一致");
+      },
+    },
+    {
+      name: "批次内 fencing 失配时整批拒绝，不留半份正文",
+      async run(store, { assert, seedAttempt }) {
+        await seedAttempt({ turnId: "t_batch", attemptId: "a_batch" });
+        const claim = await store.claimTurnAttempt({ turnId: "t_batch", attemptId: "a_batch", expectedFencingToken: 0 });
+        assert.equal(claim.ok, true);
+        if (!claim.ok) return;
+        const stale = claim.fencingToken - 1;
+        let threw = false;
+        try {
+          await store.recordSafeSegments?.([
+            { turnId: "t_batch", attemptId: "a_batch", sequence: 1, text: "a", eventData: { text: "a" }, safetyDecision: "approved", expectedFencingToken: stale },
+            { turnId: "t_batch", attemptId: "a_batch", sequence: 2, text: "b", eventData: { text: "b" }, safetyDecision: "approved", expectedFencingToken: stale },
+          ]);
+        } catch {
+          threw = true;
+        }
+        assert.equal(threw, true, "过期 fencing 的批次必须被拒绝");
+        // all-or-none：拒绝后不得留下任何片段或事件。
+        const events = await store.listEvents("t_batch");
+        assert.equal(events.length, 0, "被拒绝的批次不得留下事件");
+        if (typeof store.listCommittedSegments === "function") {
+          const segments = await store.listCommittedSegments("t_batch");
+          assert.equal(segments.length, 0, "被拒绝的批次不得留下可见片段");
+        }
+      },
+    },
+    {
+      name: "终态与收尾事件原子提交（finalizeAttemptWithEvent）",
+      async run(store, { assert, seedAttempt, attemptStatus }) {
+        await seedAttempt({ turnId: "t_atomic", attemptId: "a_atomic" });
+        const claim = await store.claimTurnAttempt({ turnId: "t_atomic", attemptId: "a_atomic", expectedFencingToken: 0 });
+        assert.equal(claim.ok, true);
+        if (!claim.ok) return;
+        const committed = await store.finalizeAttemptWithEvent({
+          turnId: "t_atomic",
+          attemptId: "a_atomic",
+          status: "Completed",
+          expectedFencingToken: claim.fencingToken,
+          sequence: 1,
+          eventType: "done",
+          eventData: { status: "Completed", isComplete: true },
+          safetyDecision: "approved",
+        });
+        assert.equal(committed.ok, true, "终态与 done 事件必须一次提交成功");
+        // 终态与事件不能拆散：提交后两者必须同时可见。
+        assert.equal(await attemptStatus({ turnId: "t_atomic", attemptId: "a_atomic" }), "Completed");
+        const events = await store.listEvents("t_atomic");
+        assert.equal(events.length, 1, "done 事件必须与终态一同落地");
+        assert.equal(events[0]!.eventType, "done");
       },
     },
   ]);

@@ -36,6 +36,14 @@ export class InMemoryExecutionStore implements ExecutionStorePort {
   private leaseRenewalCount = 0;
   private safeSegmentBatchCount = 0;
 
+  /**
+   * 记录 Turn 状态（**非 Port 方法**）。
+   *
+   * `ExecutionStorePort` 曾声明可选的 `updateTurnStatus`，但内核从不调用、全仓无
+   * 消费者，已从端口移除。此处保留该方法与其读取器 `getTurnStatus`，仅因为它们是
+   * 本类既有的公开成员，删除属于不必要的破坏性变更；它不构成任何跨实现契约，
+   * 宿主实现无需提供。
+   */
   async updateTurnStatus(input: {
     turnId: string;
     status: "Completed" | "Failed" | "Interrupted";
@@ -430,6 +438,30 @@ export class InMemoryExecutionStore implements ExecutionStorePort {
       .filter((s) => s.turnId === turnId && s.committed)
       .sort((a, b) => a.sequence - b.sequence)
       .map((s) => ({ sequence: s.sequence, text: s.text, committed: s.committed }));
+  }
+
+  /**
+   * E2：已提交安全片段（可见前缀；sequence 升序）。
+   *
+   * 实现 `ExecutionStorePort` 声明的方法。此前内存实现只提供测试钩子
+   * `safeSegments()`，从未实现该端口方法，读取方会拿到空列表并静默丢掉已提交
+   * 正文；由共享契约套件发现。`id` / `streamEventId` 与生产仓储同构生成。
+   */
+  async listCommittedSegments(turnId: string): Promise<Array<{
+    id: string;
+    sequence: number;
+    text: string;
+    streamEventId: string | null;
+  }>> {
+    return this.safeSegmentLog
+      .filter((s) => s.turnId === turnId && s.committed)
+      .sort((a, b) => a.sequence - b.sequence)
+      .map((s) => ({
+        id: `seg_${turnId}_${s.sequence}`,
+        sequence: s.sequence,
+        text: s.text,
+        streamEventId: `tev_${turnId}_${s.sequence}`,
+      }));
   }
 
   /** 工具副作用证据日志（测试断言用） */
