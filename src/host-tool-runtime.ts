@@ -8,7 +8,7 @@
  */
 
 import type { ControlContext } from "./control-context.js";
-import { inspectToolInput } from "./tool-input-safe.js";
+import { inspectToolInput } from "./tool/tool-input-safe.js";
 import type { ToolBudget, ToolValidatorPort } from "./types.js";
 import { validateJsonSchema } from "./json-schema-validator.js";
 

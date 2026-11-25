@@ -7,4 +7,4 @@
  * 运行时依赖为空（dependencies: {}）；禁止引入 SQLite/LibSQL/Drizzle 等持久层依赖。
  */
 export * from "./browser.js";
-export * from "./cli-approval.js";
+export * from "./approval/cli-approval.js";

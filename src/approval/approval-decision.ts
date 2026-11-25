@@ -13,8 +13,8 @@
  * 两侧的差异只在上下文装配（executor 传 executionId 作为幂等键、装饰器传原始 invocationId），
  * 裁决与映射规则本身保持单一真源。
  */
-import type { ToolCallRequest, ToolCallResult } from "./types.js";
-import type { ToolApprovalDecision } from "./ports.js";
+import type { ToolCallRequest, ToolCallResult } from "../types.js";
+import type { ToolApprovalDecision } from "../ports.js";
 
 /** 裁决所需的最小输入（两侧各自装配后传入） */
 export interface ToolCallDecisionInput {

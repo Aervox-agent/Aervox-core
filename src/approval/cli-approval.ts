@@ -11,7 +11,7 @@ import type {
   ApprovalPolicyPort,
   ToolApprovalDecision,
   ToolApprovalRequest,
-} from "./ports.js";
+} from "../ports.js";
 
 export interface CliInteractiveApprovalPolicyOptions {
   input?: NodeJS.ReadableStream;

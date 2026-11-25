@@ -7,7 +7,7 @@
  * - 契约自洽：严格产出归一的 ModelChunk、ModelStopReason 和 ModelUsage 分账数据；
  * - 故障注入：支持在指定 Step 触发错误、取消信号响应以及模拟流延迟。
  */
-import type { ModelProviderPort } from "./ports.js";
+import type { ModelProviderPort } from "../ports.js";
 import type {
   ModelCapabilities,
   ModelChunk,
@@ -15,7 +15,7 @@ import type {
   ModelStopReason,
   ModelUsage,
   ToolCallRequest,
-} from "./types.js";
+} from "../types.js";
 
 export interface FauxStep {
   /** 思考内容增量 */

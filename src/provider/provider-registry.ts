@@ -7,8 +7,8 @@
  * - 代际追踪（generation）：动态增删提供者触发代际递增，避免旧连接/过期配置混乱；
  * - 开放注册接口：新增 OpenAI 兼容端点仅需注册描述符，无需修改执行器或路由。
  */
-import type { ModelCapabilities } from "./types.js";
-import type { ModelProviderPort } from "./ports.js";
+import type { ModelCapabilities } from "../types.js";
+import type { ModelProviderPort } from "../ports.js";
 import { createOpenAICompatProvider, type OpenAICompatConfig } from "./openai-compat-provider.js";
 import { createReplayProvider } from "./replay-provider.js";
 import { createFauxProvider, type FauxProviderOptions } from "./faux-provider.js";

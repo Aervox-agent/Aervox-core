@@ -11,7 +11,7 @@ import type {
   ToolCallRequest,
   ToolExecutionStatus,
 } from "./types.js";
-import type { ReplayStep } from "./replay-provider.js";
+import type { ReplayStep } from "./provider/replay-provider.js";
 
 export interface DiagnosticsTimelineItem {
   phase: "before_turn_hook" | "context_build" | "model_step" | "tool_execution" | "approval_wait" | "after_turn_hook";

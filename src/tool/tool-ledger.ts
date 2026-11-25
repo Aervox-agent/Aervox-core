@@ -11,8 +11,8 @@
  *
  * 抽出后它是三个纯函数，可独立推理与测试；executor 侧只剩调用点。
  */
-import type { ExecutionStorePort } from "./ports.js";
-import type { ToolCallRequest, ToolCallResult, ToolExecutionStatus } from "./types.js";
+import type { ExecutionStorePort } from "../ports.js";
+import type { ToolCallRequest, ToolCallResult, ToolExecutionStatus } from "../types.js";
 
 /**
  * 工具执行结果 → 账本状态。

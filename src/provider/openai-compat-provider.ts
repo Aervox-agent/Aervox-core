@@ -12,8 +12,8 @@
  * - timeoutMs 为【空闲超时】：每收到一段上游数据即重置；思考模型持续吐 reasoning 也算活性。
  * 使用全局 fetch（Node 18+ / 浏览器均可用）。
  */
-import type { ModelProviderPort } from "./ports.js";
-import type { ModelCapabilities, ModelChunk, ModelRequest, PromptMessage, ToolCallRequest } from "./types.js";
+import type { ModelProviderPort } from "../ports.js";
+import type { ModelCapabilities, ModelChunk, ModelRequest, PromptMessage, ToolCallRequest } from "../types.js";
 
 export interface OpenAICompatConfig {
   capabilities?: Pick<ModelCapabilities, "toolCalls" | "reasoning">;

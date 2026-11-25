@@ -1,4 +1,4 @@
-import { abortableStream, awaitWithSignal } from "./abortable.js";
+import { abortableStream, awaitWithSignal } from "../abortable.js";
 /**
  * Aervox｜思隅 @aervox/core — DSH/pi Adapter 模拟器（阶段 6）
  *
