@@ -1,7 +1,7 @@
 /**
  * Aervox｜思隅 @aervox/core — ExecutionStorePort 共享契约套件
  *
- * 为什么存在：`ExecutionStorePort`（25 个方法）有内存实现与 SQLite 实现，两边的
+ * 为什么存在：`ExecutionStorePort`（18 个方法）有内存实现与 SQLite 实现，两边的
  * 语义必须一致，否则更换 store 就等于更换行为。此前两个实现各测各的：内存实现有
  * fencing / 幂等 / 租约夹具，SQLite 实现有原子性与终态竞争夹具，交集部分才被双方
  * 覆盖，非交集部分是裸奔的。
@@ -10,13 +10,17 @@
  * 因此这里只声明「用例 + 断言」，由宿主用自选测试框架执行，见
  * `test/execution-store-contract.test.ts` 的 vitest 适配。
  *
- * 覆盖范围刻意只包含**跨实现必须一致**的语义：claim 与 fencing CAS、事件序号与
- * 版本、可见前缀读写、批次 all-or-none、幂等预留与收口、终态单一性、终态与收尾
- * 事件原子提交、取消位。实现细节（如内存实现的模拟抢占方法）不在本套件内。
+ * 覆盖范围：**全部 18 个方法**都至少被一条用例调用。刻意只断言**跨实现必须一致**
+ * 的语义——claim 与 fencing CAS、事件序号唯一性与信封版本、可见前缀读写、批次
+ * all-or-none、幂等预留与收口、工具结果原子收口、终态单一性、终态与收尾事件原子
+ * 提交、取消位、续租不递增 fencing、观测写入不要求可执行 Attempt。实现细节
+ * （如内存实现的模拟抢占方法、TTL 极值）不在本套件内，由各自专项测试负责。
  *
- * 本套件已发现两处真实分歧，均以契约为准修正：
- * 1. SQLite 对已 Cancelled 的 Attempt 请求取消失败返回成功（违反 ports.ts §11.1）；
- * 2. 内存实现从未实现 `listCommittedSegments`，读取方会拿到空列表并静默丢失已提交正文。
+ * 本套件已发现三处真实分歧，均以契约为准修正：
+ * 1. SQLite 对已 Cancelled 的 Attempt 请求取消返回成功（违反 ports.ts §11.1）；
+ * 2. 内存实现从未实现 `listCommittedSegments`，读取方会拿到空列表并静默丢失已提交正文；
+ * 3. 内存实现静默接受重复 `sequence`，而生产仓储以唯一索引拒绝——重放与客户端
+ *    去重都以序号唯一为前提。
  */
 import type {
   AgentStreamEventInput,
