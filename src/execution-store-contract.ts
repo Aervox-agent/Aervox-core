@@ -275,5 +275,152 @@ export function executionStoreContract(): readonly StoreContractCase[] {
         assert.equal(events[0]!.eventType, "done");
       },
     },
+    {
+      name: "续租：仅持有匹配的 leaseId 与 fencing 时可续，且不改变 fencing",
+      async run(store, { assert, seedAttempt }) {
+        await seedAttempt({ turnId: "t_renew", attemptId: "a_renew" });
+        const claim = await store.claimTurnAttempt({ turnId: "t_renew", attemptId: "a_renew", expectedFencingToken: 0 });
+        assert.equal(claim.ok, true);
+        if (!claim.ok || !claim.leaseId) { assert.ok(claim.ok && claim.leaseId, "claim 必须返回 leaseId 才能续租"); return; }
+        const renewed = await store.renewAttemptLease({
+          attemptId: "a_renew",
+          leaseId: claim.leaseId,
+          expectedFencingToken: claim.fencingToken,
+        });
+        assert.equal(renewed.ok, true, "持有正确租约时必须可续租");
+        // 续租不得递增 fencing：否则执行中的写会全部变成"过期"。
+        const stillValid = await store.appendEvent({
+          ...event("t_renew", "a_renew", 1),
+          expectedFencingToken: claim.fencingToken,
+        });
+        assert.ok(stillValid, "续租后原 fencing 仍然有效");
+        // 错误的 leaseId 必须被拒绝。
+        const wrongLease = await store.renewAttemptLease({
+          attemptId: "a_renew",
+          leaseId: "not-the-lease",
+          expectedFencingToken: claim.fencingToken,
+        });
+        assert.equal(wrongLease.ok, false, "错误 leaseId 不得续租");
+      },
+    },
+    {
+      name: "nextSequence 随事件写入单调递增，不与已用序号冲突",
+      async run(store, { assert, seedAttempt }) {
+        await seedAttempt({ turnId: "t_next", attemptId: "a_next" });
+        const claim = await store.claimTurnAttempt({ turnId: "t_next", attemptId: "a_next", expectedFencingToken: 0 });
+        assert.equal(claim.ok, true);
+        if (!claim.ok) return;
+        const first = await store.nextSequence("t_next");
+        assert.ok(first >= 1, "首个序号必须从 1 起");
+        await store.appendEvent({ ...event("t_next", "a_next", first), expectedFencingToken: claim.fencingToken });
+        const second = await store.nextSequence("t_next");
+        assert.ok(second > first, "写入后下一个序号必须更大");
+        // 复用已占用的序号会让恢复与去重失去依据。
+        let conflicted = false;
+        try {
+          await store.appendEvent({ ...event("t_next", "a_next", first), expectedFencingToken: claim.fencingToken });
+        } catch {
+          conflicted = true;
+        }
+        assert.equal(conflicted, true, "重复序号必须被拒绝");
+      },
+    },
+    {
+      name: "recordToolOutcome：账本收口与事件原子写入，fencing 失配时两者都不留",
+      async run(store, { assert, seedAttempt }) {
+        await seedAttempt({ turnId: "t_outcome", attemptId: "a_outcome" });
+        const claim = await store.claimTurnAttempt({ turnId: "t_outcome", attemptId: "a_outcome", expectedFencingToken: 0 });
+        assert.equal(claim.ok, true);
+        if (!claim.ok) return;
+        await store.reserveToolExecution({
+          turnId: "t_outcome", attemptId: "a_outcome", invocationId: "inv_o", name: "read", arguments: {},
+        });
+        const committed = await store.recordToolOutcome({
+          turnId: "t_outcome",
+          attemptId: "a_outcome",
+          sequence: 1,
+          invocationId: "inv_o",
+          name: "read",
+          arguments: {},
+          status: "executed",
+          output: { ok: true },
+          startedAt: new Date(0).toISOString(),
+          eventData: { name: "read", ok: true },
+          safetyDecision: "approved",
+          expectedFencingToken: claim.fencingToken,
+        });
+        assert.equal(committed.ok, true, "权威结果应收口成功");
+        const events = await store.listEvents("t_outcome");
+        assert.equal(events.length, 1, "账本收口必须同时产生一条事件");
+        assert.equal(events[0]!.eventType, "tool_result");
+
+        // fencing 失配：账本与事件都必须保持原样（不得只写一半）。
+        const stale = claim.fencingToken - 1;
+        let threw = false;
+        try {
+          await store.recordToolOutcome({
+            turnId: "t_outcome",
+            attemptId: "a_outcome",
+            sequence: 2,
+            invocationId: "inv_stale",
+            name: "read",
+            arguments: {},
+            status: "executed",
+            output: {},
+            startedAt: new Date(0).toISOString(),
+            eventData: {},
+            safetyDecision: "approved",
+            expectedFencingToken: stale,
+          });
+        } catch {
+          threw = true;
+        }
+        assert.equal(threw, true, "过期 fencing 的收口必须抛错");
+        const after = await store.listEvents("t_outcome");
+        assert.equal(after.length, 1, "失败的收口不得追加事件");
+      },
+    },
+    {
+      name: "recordToolExecution 与观测写入不要求可执行 Attempt（诊断旁路）",
+      async run(store, { assert, seedAttempt }) {
+        await seedAttempt({ turnId: "t_diag", attemptId: "a_diag" });
+        // 可观测副作用（ModelRun / ContextManifest / 工具执行证据）允许在执行已
+        // 结束时写入：它们不改变控制流，宿主缺省也可为 no-op。契约要求"不抛错"。
+        const at = new Date(0).toISOString();
+        await store.recordToolExecution({
+          turnId: "t_diag",
+          attemptId: "a_diag",
+          invocationId: "inv_diag",
+          name: "read",
+          arguments: {},
+          status: "executed",
+          startedAt: at,
+          finishedAt: at,
+        });
+        await store.recordModelRun({
+          runId: "run_diag",
+          turnId: "t_diag",
+          sessionId: "s_diag",
+          attemptId: "a_diag",
+          stepId: 1,
+          provider: "test",
+          modelId: "test",
+          purpose: "diagnostic",
+          status: "completed",
+        });
+        await store.recordContextManifest({
+          manifestId: "man_diag",
+          turnId: "t_diag",
+          sessionId: "s_diag",
+          attemptId: "a_diag",
+          stepId: 1,
+          modelRunId: "run_diag",
+          purpose: "diagnostic",
+          snapshot: [],
+        });
+        // 只要不抛错即满足契约；具体落地形式由宿主决定。
+        assert.ok(true, "观测性写入不应要求可执行 Attempt");
+      },
+    },
   ]);
 }

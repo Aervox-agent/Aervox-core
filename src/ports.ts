@@ -61,7 +61,13 @@ export interface ExecutionStorePort {
   /** 下一个可用事件序号（现有事件数 + 1；阶段 1 单执行器，不做跨执行器分配） */
   nextSequence(turnId: string): Promise<number>;
 
-  /** 追加一条已过安全门的持久化流事件 */
+  /**
+   * 追加一条已过安全门的持久化流事件。
+   *
+   * 同一 Turn 内 `sequence` 唯一：重复序号必须被拒绝，否则事件流失去"可依序重放"
+   * 的前提，客户端按 sequence 去重与检测空洞的做法也会失效。生产仓储以
+   * `(turn_id, sequence)` 唯一索引保证；内存实现同样必须拒绝。
+   */
   appendEvent(input: AgentStreamEventInput): Promise<AgentStreamEvent>;
 
   /** 读取 Turn 的持久事件（afterSequence 起点；0 = 全量） */
