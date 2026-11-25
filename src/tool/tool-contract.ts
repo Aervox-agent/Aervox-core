@@ -1,4 +1,4 @@
-import type { ToolSafetyLevel, ToolSpec } from "./types.js";
+import type { ToolSafetyLevel, ToolSpec } from "../types.js";
 
 /** An explicit level may tighten a declaration, but must not downgrade a write tool. */
 export function resolveToolSafetyLevel(spec: ToolSpec | undefined): ToolSafetyLevel {

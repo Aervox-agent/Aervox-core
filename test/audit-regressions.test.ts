@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ControlContext, createComposedContextBuilder, createOpenAICompatProvider, createScriptedProvider, defaultContextBuilder, executeTurn, InMemoryExecutionStore, InMemoryInbox } from "../src/index.js";
-import { runToolExecution } from "../src/tool-pipeline.js";
-import { classifyToolOutcome } from "../src/tool-ledger.js";
+import { runToolExecution } from "../src/tool/tool-pipeline.js";
+import { classifyToolOutcome } from "../src/tool/tool-ledger.js";
 import type { ModelChunk } from "../src/types.js";
 
 const input = { turnId: "t", attemptId: "a", sessionId: "s", userMessage: "start" };

@@ -1,4 +1,4 @@
-import { inspectToolResult } from "./tool-result-safe.js";
+import { inspectToolResult } from "./tool/tool-result-safe.js";
 /**
  * Aervox｜思隅 @aervox/core — 恢复裁决（AVX-HAR-001 §11.3「工具结果已权威提交但尚未注入」）
  *

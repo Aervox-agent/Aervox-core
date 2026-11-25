@@ -16,17 +16,17 @@
  * 行为等价性（ITER-041 gate）：本段为纯搬迁，判定顺序、异常语义、subtask 派生参数
  * 与 dispose 时机均未改动。租约丢失仍以 `LeaseLostError` 抛给外层统一收敛。
  */
-import { awaitWithSignal } from "./abortable.js";
-import { LeaseLostError } from "./errors.js";
-import { decideToolCall } from "./approval-decision.js";
+import { awaitWithSignal } from "../abortable.js";
+import { LeaseLostError } from "../errors.js";
+import { decideToolCall } from "../approval/approval-decision.js";
 import { inspectToolInput } from "./tool-input-safe.js";
-import { validateJsonSchema } from "./json-schema-validator.js";
-import { validateToolBudget } from "./host-tool-runtime.js";
+import { validateJsonSchema } from "../json-schema-validator.js";
+import { validateToolBudget } from "../host-tool-runtime.js";
 import { resolveToolSafetyLevel } from "./tool-contract.js";
-import type { ApprovalPolicyPort, ToolProviderPort } from "./ports.js";
-import type { ControlContext } from "./control-context.js";
-import type { ExecuteResult, ToolCallRequest, ToolCallResult, ToolSpec, ToolValidatorPort } from "./types.js";
-import type { LeaseHeartbeat } from "./lease-heartbeat.js";
+import type { ApprovalPolicyPort, ToolProviderPort } from "../ports.js";
+import type { ControlContext } from "../control-context.js";
+import type { ExecuteResult, ToolCallRequest, ToolCallResult, ToolSpec, ToolValidatorPort } from "../types.js";
+import type { LeaseHeartbeat } from "../lease-heartbeat.js";
 
 /** 长耗时工具的放宽超时（ms）：ask_user_question 等用户交互、aervox_diary_write 内含 LLM 生成 */
 const LONG_RUNNING_TOOL_TIMEOUT_MS = 120000;

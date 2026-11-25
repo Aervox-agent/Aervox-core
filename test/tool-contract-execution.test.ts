@@ -4,7 +4,7 @@ import {
   withApprovalPolicy,
 } from "../src/index.js";
 import type { ModelProviderPort, ToolProviderPort, ToolSpec } from "../src/index.js";
-import { runToolExecution } from "../src/tool-pipeline.js";
+import { runToolExecution } from "../src/tool/tool-pipeline.js";
 
 const input = { turnId: "t", attemptId: "a", sessionId: "s", userMessage: "run tool" };
 const spec: ToolSpec = {

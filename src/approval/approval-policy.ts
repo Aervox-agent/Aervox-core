@@ -12,10 +12,10 @@ import type {
   ToolExecutionInput,
   ToolExecutionResult,
   ToolProviderPort,
-} from "./ports.js";
+} from "../ports.js";
 import { decideToolCall } from "./approval-decision.js";
-import { resolveToolSafetyLevel } from "./tool-contract.js";
-import { validateJsonSchema } from "./json-schema-validator.js";
+import { resolveToolSafetyLevel } from "../tool/tool-contract.js";
+import { validateJsonSchema } from "../json-schema-validator.js";
 
 export interface AutoApprovalPolicyOptions {
   /**

@@ -12,7 +12,7 @@
  * - verifyAdapterManifest：TC-CONTRACT-STREAM-001 的固定 SHA + 许可证 + 策略准入复核；
  * - AdapterWireMessage + 编解码：子进程 stdio 与内存模拟器共用的 JSON 行协议。
  */
-import type { ToolSpec } from "./types.js";
+import type { ToolSpec } from "../types.js";
 
 /** Adapter 标识（阶段 6 仅 DSH/pi；DSH=DeepSeek Harness） */
 export type AdapterDriverId = "dsh" | "pi";

@@ -186,6 +186,19 @@ console.log(result.status, result.stepsTaken); // completed 2
 
 内核提供内存实现供测试与集成使用：`InMemoryExecutionStore`、`InMemoryInbox`、`HostToolRuntime`、`createFauxProvider`、`createReplayProvider`。它们让契约可被独立验证，但不构成操作系统隔离沙箱，也不替代宿主的持久化与授权。
 
+## 源码组织
+
+`src/` 顶层保留入口、契约与执行主干，成族的模块收进子目录：
+
+| 目录 | 内容 |
+|---|---|
+| `approval/` | 审批策略、决策判定与终端交互审批 |
+| `tool/` | 工具契约、入参/结果安检、账本、执行管线与工具提供者 |
+| `provider/` | OpenAI 兼容、Replay、Faux、Recording 与 Provider 注册表 |
+| `adapter/` | 外部运行时适配契约与仿真驱动 |
+
+`ports.ts`、`types.ts`、`errors.ts` 是契约真源，留在顶层；`executor.ts` 与 `control-context.ts` 是执行主干。目录划分只影响内部路径，三个公开入口的符号集合不受影响。
+
 ## 设计约束
 
 - **零运行时依赖。** `dependencies` 为空；不引入 SQLite、LibSQL、Drizzle 或其他持久层。

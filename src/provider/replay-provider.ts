@@ -6,8 +6,8 @@
  *   多 Step Loop 的两步工具链、工具失败、maxSteps 等固定场景；
  * - 真实模型 Provider 在后续阶段经 ModelProviderPort 接入，Loop 控制流不变。
  */
-import type { ModelProviderPort } from "./ports.js";
-import type { ModelChunk, ToolCallRequest } from "./types.js";
+import type { ModelProviderPort } from "../ports.js";
+import type { ModelChunk, ToolCallRequest } from "../types.js";
 
 /** 阶段 1 纯文本固定夹具：每个元素一块文本，末块 isFinal=true */
 export const REPLAY_FIXTURE: readonly string[] = [
@@ -43,7 +43,7 @@ export function createScriptedProvider(script: readonly ReplayStep[]): ModelProv
   return {
     id: "scripted",
     capabilities: { toolCalls: true, reasoning: false },
-    async *stream(request: import("./types.js").ModelRequest): AsyncIterable<ModelChunk> {
+    async *stream(request: import("../types.js").ModelRequest): AsyncIterable<ModelChunk> {
       const step = script[request.step - 1];
       if (!step) { yield { text: "", isFinal: true, stopReason: "stop" }; return; }
       yield {

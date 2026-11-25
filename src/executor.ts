@@ -21,12 +21,12 @@ import type {
 } from "./types.js";
 import { LeaseLostError } from "./errors.js";
 import { claimAttemptExecution } from "./attempt-execution.js";
-import { inspectToolResult } from "./tool-result-safe.js";
-import { settleDuplicateToolCall, settleToolLedger } from "./tool-ledger.js";
-import { runToolExecution, ToolExecutionAborted } from "./tool-pipeline.js";
+import { inspectToolResult } from "./tool/tool-result-safe.js";
+import { settleDuplicateToolCall, settleToolLedger } from "./tool/tool-ledger.js";
+import { runToolExecution, ToolExecutionAborted } from "./tool/tool-pipeline.js";
 import { StepCollector } from "./step-collector.js";
 import type { StepCollection } from "./step-collector.js";
-import { createRecordingProvider } from "./recording-provider.js";
+import { createRecordingProvider } from "./provider/recording-provider.js";
 import { awaitWithSignal } from "./abortable.js";
 
 export interface ExecuteTurnInput {

@@ -6,7 +6,7 @@
  * 主仓工具注册表（apps/api/src/modules/tools/runtime.ts），本文件保留为
  * 测试/开发提供者。
  */
-import type { ToolExecutionInput, ToolExecutionResult, ToolProviderPort, ToolSpec } from "./ports.js";
+import type { ToolExecutionInput, ToolExecutionResult, ToolProviderPort, ToolSpec } from "../ports.js";
 
 /** 阶段 2 只读白名单工具清单（最小集；后续工具在此登记并复用主仓契约） */
 export const READONLY_TOOLS: readonly ToolSpec[] = [
