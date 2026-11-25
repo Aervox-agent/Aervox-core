@@ -86,8 +86,10 @@ export class InMemoryInbox implements InboxPort {
     for (const id of input.itemIds) {
       const item = this.itemsById.get(id);
       if (!item) continue;
-      // 只接受非 final 状态（pending/claimed）→ acknowledged；final 不再变更
-      if (item.status === "acknowledged" || item.status === "expired") continue;
+      // ports.ts：只接受此前 claim 的项（claimed → acknowledged）。此前这里也接受
+      // pending，与生产仓储的 `status = claimed` 条件及契约正文都不符——ack 未经
+      // claim 的项会让崩溃重放语义失效（消费方可以跳过 claim 直接吞掉一条待消费项）。
+      if (item.status !== "claimed") continue;
       item.status = "acknowledged";
       item.ackedAt = ackedAt;
     }
