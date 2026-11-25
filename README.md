@@ -75,13 +75,14 @@ mise exec -- pnpm test:browser
 
 ## 使用
 
-三个入口各有明确读者，包名保持 `@aervox/core`：
+两个入口各司其职，包名保持 `@aervox/core`：
 
 | 入口 | 用途 |
 |---|---|
-| `@aervox/core` | 完整内核，含 Node 终端审批策略 |
-| `@aervox/core/core` | 轻量组合入口，只含纯内存、进程内执行管道 |
+| `@aervox/core` | 完整内核，含 Node 终端审批策略（`CliInteractiveApprovalPolicy`） |
 | `@aervox/core/browser` | 平台中立入口，不含终端审批与任何 Node 内置模块 |
+
+两者只差一个导出：除终端审批策略外，`/browser` 的符号与根入口完全一致。此前的 `@aervox/core/core` 是该集合的严格子集，没有独有能力，已于内核整改中移除；原导入改为 `@aervox/core/browser` 即可。
 
 作为 workspace 包接入并构建后：
 
