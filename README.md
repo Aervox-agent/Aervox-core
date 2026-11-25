@@ -75,14 +75,21 @@ mise exec -- pnpm test:browser
 
 ## 使用
 
-两个入口各司其职，包名保持 `@aervox/core`：
+三个入口各司其职，包名保持 `@aervox/core`：
 
 | 入口 | 用途 |
 |---|---|
 | `@aervox/core` | 完整内核，含 Node 终端审批策略（`CliInteractiveApprovalPolicy`） |
 | `@aervox/core/browser` | 平台中立入口，不含终端审批与任何 Node 内置模块 |
+| `@aervox/core/ports` | 只有 Port 契约、负载类型与契约错误，零实现 |
 
-两者只差一个导出：除终端审批策略外，`/browser` 的符号与根入口完全一致。此前的 `@aervox/core/core` 是该集合的严格子集，没有独有能力，已于内核整改中移除；原导入改为 `@aervox/core/browser` 即可。
+根入口与 `/browser` 只差一个导出：除终端审批策略外，`/browser` 的符号与根入口完全一致。此前的 `@aervox/core/core` 是该集合的严格子集，没有独有能力，已于内核整改中移除；原导入改为 `@aervox/core/browser` 即可。
+
+只想实现端口、不想连带引入执行器的宿主用 `/ports`。它自包含地提供 `types.ts` 的负载类型与 `errors.ts` 的契约错误，在关闭 ambient Node 类型的条件下即可通过类型检查，打包产物约 0.5 KB（`/browser` 约 180 KB）：
+
+```ts
+import { LeaseLostError, type ExecutionStorePort } from "@aervox/core/ports";
+```
 
 作为 workspace 包接入并构建后：
 
