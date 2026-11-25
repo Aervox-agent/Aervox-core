@@ -70,8 +70,5 @@
     </g>
     <text x="634" y="344" fill="#5A6884" font-size="14">内核不持有数据库、账号、界面与业务插件。</text>
     <text x="634" y="366" fill="#8894AC" font-size="12">生产持久化、授权与删除门禁由宿主实现负责。</text>
-
-    <!-- event stream out -->
-    <path d="M600 424H1150" stroke="none"/>
   </g>
 </svg>
