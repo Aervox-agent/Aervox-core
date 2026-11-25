@@ -150,6 +150,11 @@ export class InMemoryExecutionStore implements ExecutionStorePort {
       occurredAt: new Date(0).toISOString(), // 测试确定性时间
     };
     const list = this.eventsByTurn.get(input.turnId) ?? [];
+    // 同一 Turn 内 sequence 必须唯一（ports.ts）：生产仓储以 (turn_id, sequence)
+    // 唯一索引保证，内存实现此前允许重复，会让"按序号重放"失去前提。
+    if (list.some((existing) => existing.sequence === input.sequence)) {
+      throw new Error(`duplicate sequence ${input.sequence} for turn ${input.turnId}`);
+    }
     list.push(event);
     this.eventsByTurn.set(input.turnId, list);
     return event;
