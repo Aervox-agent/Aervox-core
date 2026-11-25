@@ -38,7 +38,10 @@ describe("public entrypoints", () => {
   // A host implementing a port must not have to pull in the executor, the
   // providers or the in-memory fixtures just to name the contract.
   it("keeps the contract entry free of implementation and a subset of the neutral entry", () => {
-    expect(Object.keys(ports).sort()).toEqual(["CompactionError", "LeaseLostError"]);
+    // Contract errors a store must throw, plus the envelope version contract a
+    // reader must honour. Nothing executable beyond those three.
+    expect(Object.keys(ports).sort())
+      .toEqual(["CompactionError", "EVENT_PAYLOAD_VERSION", "LeaseLostError", "SUPPORTED_EVENT_PAYLOAD_VERSIONS", "isSupportedEventPayloadVersion"]);
     for (const [name, value] of Object.entries(ports)) {
       expect(browser, `contract symbol ${name} must stay available on /browser`).toHaveProperty(name, value);
     }

@@ -221,9 +221,40 @@ export interface AgentStreamEventInput {
   expectedFencingToken?: number;
 }
 
+/**
+ * 当前事件信封（envelope）负载版本。
+ *
+ * 版本语义由宿主文档 STREAMING_PROTOCOL §4/§5 定义：新增可选字段可保持同版本，
+ * 删除字段、收窄取值或改变 eventType 语义必须提升版本，并保留上一版本客户端的
+ * 兼容窗口。读取方必须据此拒绝未知版本，不得猜测字段含义。
+ */
+export const EVENT_PAYLOAD_VERSION = 1;
+
+/**
+ * 本内核能产出的全部事件信封版本。宿主与客户端据此判断兼容性。
+ *
+ * 提升 `EVENT_PAYLOAD_VERSION` 时，旧版本是否仍在支持窗口内必须显式决定：
+ * 仍在窗口内则加入本集合，否则客户端会按未知版本拒绝渲染。
+ */
+export const SUPPORTED_EVENT_PAYLOAD_VERSIONS: readonly number[] = Object.freeze([EVENT_PAYLOAD_VERSION]);
+
+/**
+ * 判断事件信封版本能否被当前内核读取方消费。
+ *
+ * 非有限整数、非正整数与未支持版本一律返回 false——fail-closed，避免把
+ * 未知语义按当前版本渲染。
+ */
+export function isSupportedEventPayloadVersion(version: unknown): version is number {
+  return typeof version === "number"
+    && Number.isInteger(version)
+    && version > 0
+    && SUPPORTED_EVENT_PAYLOAD_VERSIONS.includes(version);
+}
+
 /** 持久化后的流事件（与 @aervox/contracts TurnStreamEvent 同构的最小面） */
 export interface AgentStreamEvent extends AgentStreamEventInput {
   eventId: string;
+  /** 信封版本；由 store 以 `EVENT_PAYLOAD_VERSION` 补齐 */
   payloadVersion: number;
   occurredAt: string;
 }

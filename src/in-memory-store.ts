@@ -13,6 +13,7 @@ import type {
   ToolExecutionStatus,
 } from "./types.js";
 import { LeaseLostError } from "./errors.js";
+import { EVENT_PAYLOAD_VERSION } from "./ports.js";
 
 interface AttemptRecord {
   id: string;
@@ -137,7 +138,7 @@ export class InMemoryExecutionStore implements ExecutionStorePort {
     const event: AgentStreamEvent = {
       ...input,
       eventId: `tev_${input.turnId}_${input.sequence}`,
-      payloadVersion: 1,
+      payloadVersion: EVENT_PAYLOAD_VERSION,
       occurredAt: new Date(0).toISOString(), // 测试确定性时间
     };
     const list = this.eventsByTurn.get(input.turnId) ?? [];
@@ -401,7 +402,7 @@ export class InMemoryExecutionStore implements ExecutionStorePort {
       safetyDecision: input.safetyDecision,
       expectedFencingToken: input.expectedFencingToken,
       eventId: `tev_${input.turnId}_${input.sequence}`,
-      payloadVersion: 1,
+      payloadVersion: EVENT_PAYLOAD_VERSION,
       occurredAt: new Date(0).toISOString(),
     }));
     const list = this.eventsByTurn.get(first.turnId) ?? [];
