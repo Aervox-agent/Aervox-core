@@ -22,6 +22,10 @@
     "./ports": {
       "types": "./dist/ports.d.ts",
       "default": "./dist/ports.js"
+    },
+    "./test-contract": {
+      "types": "./dist/execution-store-contract.d.ts",
+      "default": "./dist/execution-store-contract.js"
     }
   },
   "scripts": {

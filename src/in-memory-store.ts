@@ -170,7 +170,7 @@ export class InMemoryExecutionStore implements ExecutionStorePort {
     return { ok: true };
   }
 
-  /** 2b：取消请求位（仅 Running → CancelRequested；已终态拒绝） */
+  /** 2b：取消请求位（仅 Running → CancelRequested；已终态拒绝，见 ports.ts 契约） */
   async requestCancelAttempt(input: {
     turnId: string;
     attemptId: string;
