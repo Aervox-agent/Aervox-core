@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="440" viewBox="0 0 1200 440" fill="none">
+  <title>内核与宿主的分工</title>
+  <desc>宿主实现存储、模型、工具与审批端口；内核负责 Turn 的 claim、循环、事件与终态。</desc>
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1200" y2="440" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F9FE"/>
+      <stop offset="1" stop-color="#FCF9FB"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="1198" height="438" rx="24" fill="url(#panel)" stroke="#E1E6F0"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif">
+    <!-- host column -->
+    <text x="56" y="58" fill="#62719D" font-size="13" font-weight="600" letter-spacing="3">HOST</text>
+    <g font-size="14" font-weight="500">
+      <rect x="48" y="76" width="300" height="52" rx="12" fill="#FFFFFF" stroke="#DCE2EF"/>
+      <text x="72" y="108" fill="#3A4763">ExecutionStorePort · 账本与事件</text>
+      <rect x="48" y="140" width="300" height="52" rx="12" fill="#FFFFFF" stroke="#DCE2EF"/>
+      <text x="72" y="172" fill="#3A4763">ModelProviderPort · 模型流</text>
+      <rect x="48" y="204" width="300" height="52" rx="12" fill="#FFFFFF" stroke="#DCE2EF"/>
+      <text x="72" y="236" fill="#3A4763">ToolProviderPort · 工具与副作用</text>
+      <rect x="48" y="268" width="300" height="52" rx="12" fill="#FFFFFF" stroke="#DCE2EF"/>
+      <text x="72" y="300" fill="#3A4763">ApprovalPolicyPort · 授权</text>
+      <rect x="48" y="332" width="300" height="52" rx="12" fill="#FFFFFF" stroke="#DCE2EF"/>
+      <text x="72" y="364" fill="#3A4763">DeletionGatePort · 删除与撤权</text>
+    </g>
+
+    <!-- arrows -->
+    <g stroke="#B9C4DC" stroke-width="1.5" stroke-dasharray="4 4">
+      <path d="M348 102H600"/>
+      <path d="M348 166H600"/>
+      <path d="M348 230H600"/>
+      <path d="M348 294H600"/>
+      <path d="M348 358H600"/>
+    </g>
+    <g fill="#8C9AB8">
+      <path d="M596 97L606 102L596 107Z"/>
+      <path d="M596 161L606 166L596 171Z"/>
+      <path d="M596 225L606 230L596 235Z"/>
+      <path d="M596 289L606 294L596 299Z"/>
+      <path d="M596 353L606 358L596 363Z"/>
+    </g>
+
+    <!-- kernel panel -->
+    <text x="618" y="58" fill="#62719D" font-size="13" font-weight="600" letter-spacing="3">@aervox/core</text>
+    <rect x="610" y="76" width="540" height="308" rx="16" fill="#FFFFFF" stroke="#CBD5E8"/>
+    <g font-size="14" font-weight="500">
+      <rect x="634" y="100" width="230" height="56" rx="12" fill="#EEF2FF" stroke="#D5DEF6"/>
+      <text x="658" y="124" fill="#2F3E60">claim · 租约 · fencing</text>
+      <text x="658" y="144" fill="#64739A" font-size="12">同一 Attempt 只跑一次</text>
+
+      <rect x="888" y="100" width="238" height="56" rx="12" fill="#EEF2FF" stroke="#D5DEF6"/>
+      <text x="912" y="124" fill="#2F3E60">多 Step 模型循环</text>
+      <text x="912" y="144" fill="#64739A" font-size="12">工具结果回填下一 Step</text>
+
+      <rect x="634" y="172" width="230" height="56" rx="12" fill="#FDF1F5" stroke="#F0D9E2"/>
+      <text x="658" y="196" fill="#5C3040">审批与用户提问</text>
+      <text x="658" y="216" fill="#8C6274" font-size="12">授权后才产生副作用</text>
+
+      <rect x="888" y="172" width="238" height="56" rx="12" fill="#FDF1F5" stroke="#F0D9E2"/>
+      <text x="912" y="196" fill="#5C3040">取消 · 截止 · 预算</text>
+      <text x="912" y="216" fill="#8C6274" font-size="12">ControlContext 逐级收紧</text>
+
+      <rect x="634" y="244" width="230" height="56" rx="12" fill="#F3F7F3" stroke="#DCE8DC"/>
+      <text x="658" y="268" fill="#2F4A34">事件先落库</text>
+      <text x="658" y="288" fill="#647A68" font-size="12">message → delta → done</text>
+
+      <rect x="888" y="244" width="238" height="56" rx="12" fill="#F3F7F3" stroke="#DCE8DC"/>
+      <text x="912" y="268" fill="#2F4A34">安全续跑裁决</text>
+      <text x="912" y="288" fill="#647A68" font-size="12">结果未知不自动重试</text>
+    </g>
+    <text x="634" y="344" fill="#5A6884" font-size="14">内核不持有数据库、账号、界面与业务插件。</text>
+    <text x="634" y="366" fill="#8894AC" font-size="12">生产持久化、授权与删除门禁由宿主实现负责。</text>
+
+    <!-- event stream out -->
+    <path d="M600 424H1150" stroke="none"/>
+  </g>
+</svg>
