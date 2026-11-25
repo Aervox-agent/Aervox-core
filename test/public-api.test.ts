@@ -28,7 +28,7 @@ describe("public entrypoints", () => {
   // Node and browser entries. It belongs to the Node entry alone; the removed
   // `./core` subpath duplicated part of `/browser` without adding a capability.
   it("exposes the Node kernel, the neutral browser kernel and the contract entry", () => {
-    expect(Object.keys(manifest.exports).sort()).toEqual([".", "./browser", "./ports"]);
+    expect(Object.keys(manifest.exports).sort()).toEqual([".", "./browser", "./ports", "./test-contract"]);
     expect(core.CliInteractiveApprovalPolicy).toBeTypeOf("function");
     expect(browser).not.toHaveProperty("CliInteractiveApprovalPolicy");
     expect(Object.keys(browser).sort())
