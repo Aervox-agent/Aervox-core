@@ -138,6 +138,23 @@ export function inboxContract(): readonly InboxContractCase[] {
       },
     },
     {
+      name: "已过期的项不被 claim（expiresAt 由调用方给定，无需推进时钟）",
+      async run(inbox, { assert }) {
+        const sessionId = "s_expiry";
+        // 过期时间由 enqueue 调用方提供，因此可以直接用一个已过去的时间戳断言，
+        // 不需要让测试真的等待——先前误以为该语义"无法公平断言"是错的。
+        await inbox.enqueue(command({
+          idempotencyKey: "idem_expired",
+          sessionId,
+          expiresAt: new Date(Date.now() - 60_000).toISOString(),
+        }));
+        await inbox.enqueue(command({ idempotencyKey: "idem_live", sessionId }));
+        const claimed = await inbox.claimForConsumption({ sessionId, type: "next-turn" });
+        assert.equal(claimed.length, 1, "只有未过期项可被 claim");
+        assert.equal(claimed[0]!.idempotencyKey, "idem_live", "被 claim 的必须是未过期的那条");
+      },
+    },
+    {
       name: "跨会话隔离：claim 不返回其他 session 的项",
       async run(inbox, { assert }) {
         await inbox.enqueue(command({ idempotencyKey: "idem_iso_a", sessionId: "s_iso_a" }));
