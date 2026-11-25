@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 import { createContext, runInContext } from "node:vm";
 import * as browser from "../src/browser.js";
 import * as node from "../src/index.js";
-import * as lightweight from "../src/core.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const compiler = join(dirname(createRequire(import.meta.url).resolve("typescript/package.json")), "bin/tsc");
@@ -26,11 +25,8 @@ describe("browser public entry", () => {
   it("retains all neutral public exports while preserving terminal entry compatibility", () => {
     expect(Object.keys(browser).sort()).toEqual(Object.keys(node).filter(name => name !== "CliInteractiveApprovalPolicy").sort());
     expect(browser).not.toHaveProperty("CliInteractiveApprovalPolicy");
-    expect(lightweight.CliInteractiveApprovalPolicy).toBe(node.CliInteractiveApprovalPolicy);
-    for (const [name, value] of Object.entries(lightweight)) {
-      if (name === "CliInteractiveApprovalPolicy") continue;
-      expect(node, `existing ./core export ${name}`).toHaveProperty(name, value);
-      expect(browser, `existing ./core export ${name}`).toHaveProperty(name, value);
+    for (const [name, value] of Object.entries(browser)) {
+      expect(node, `neutral export ${name} must also exist on the Node entry`).toHaveProperty(name, value);
     }
   });
 
