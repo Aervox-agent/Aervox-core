@@ -11,6 +11,25 @@ import type { ControlContext } from "./control-context.js";
 import { inspectToolInput } from "./tool/tool-input-safe.js";
 import type { ToolBudget, ToolValidatorPort } from "./types.js";
 import { validateJsonSchema } from "./json-schema-validator.js";
+import {
+  HostToolError,
+  HostToolForbiddenError,
+  HostToolNotFoundError,
+  HostToolValidationError,
+  copyToolBudget,
+  validateToolBudget,
+} from "./tool/host-tool-errors.js";
+import { defaultGatingEvaluator, gatingAllows, type GatingCondition } from "./tool/gating-evaluator.js";
+
+// Re-exported so existing imports from the runtime keep working unchanged.
+export {
+  HostToolError,
+  HostToolForbiddenError,
+  HostToolNotFoundError,
+  HostToolValidationError,
+  validateToolBudget,
+} from "./tool/host-tool-errors.js";
+export { defaultGatingEvaluator, resolveGatingField } from "./tool/gating-evaluator.js";
 
 /**
  * 本地单用户上下文（ADR-021：core 零运行时依赖，故本地声明）。
@@ -23,62 +42,7 @@ export interface LocalContext {
   readonly actorId?: string;
 }
 
-export class HostToolError extends Error {
-  readonly statusCode: number;
-  readonly code: string;
-
-  constructor(message: string, statusCode = 500, code = "TOOL_ERROR") {
-    super(message);
-    this.name = "HostToolError";
-    this.statusCode = statusCode;
-    this.code = code;
-  }
-}
-
-export class HostToolForbiddenError extends HostToolError {
-  constructor(message = "forbidden") {
-    super(message, 403, "FORBIDDEN");
-    this.name = "HostToolForbiddenError";
-  }
-}
-
-export class HostToolNotFoundError extends HostToolError {
-  constructor(message = "resource not found") {
-    super(message, 404, "NOT_FOUND");
-    this.name = "HostToolNotFoundError";
-  }
-}
-
-export class HostToolValidationError extends HostToolError {
-  readonly errors?: import("./types.js").ToolValidationErrorDetail[];
-  constructor(toolName: string, errors?: import("./types.js").ToolValidationErrorDetail[]) {
-    const detail = errors && errors.length > 0 ? `: ${errors.map((e) => `${e.path || "(root)"}: ${e.message}`).join("; ")}` : "";
-    super(`tool argument schema validation failed for ${toolName}${detail}`, 400, "SCHEMA_VALIDATION_FAILED");
-    this.name = "HostToolValidationError";
-    this.errors = errors;
-  }
-}
-
-/** 拒绝会被 Node 定时器截断或溢出为 1ms 的期限。 */
-export function validateToolBudget(budget: ToolBudget | undefined): void {
-  if (budget === undefined) return;
-  if (budget === null || typeof budget !== "object" || Array.isArray(budget)) {
-    throw new HostToolError("invalid_tool_budget: expected an object", 400, "INVALID_TOOL_BUDGET");
-  }
-  const timeout = budget.timeoutMs;
-  if (timeout !== undefined && (!Number.isInteger(timeout) || timeout < 1 || timeout > 2_147_483_647)) {
-    throw new HostToolError(
-      "invalid_tool_budget: timeoutMs must be an integer between 1 and 2147483647",
-      400,
-      "INVALID_TOOL_BUDGET",
-    );
-  }
-}
-
-function copyBudget(budget: ToolBudget | undefined): ToolBudget | undefined {
-  validateToolBudget(budget);
-  return budget === undefined ? undefined : { timeoutMs: budget.timeoutMs };
-}
+const copyBudget = copyToolBudget;
 
 export interface HostToolRegistrationModel {
   id: string;
@@ -149,52 +113,6 @@ export interface HostToolRegistryPort {
     gatingEvaluator?: (condition: { field: string; operator: string; value?: unknown; evaluatorId?: string }, context?: unknown) => boolean;
     gatingContext?: unknown;
   }): Promise<HostToolRegistrationModel[]>;
-}
-
-/** 按 dot-path 从门禁上下文解析字段值；上下文缺失或路径断裂返回 undefined */
-function resolveGatingField(context: unknown, field: string): unknown {
-  if (context === null || typeof context !== "object") return undefined;
-  let current: unknown = context;
-  for (const part of field.split(".")) {
-    if (current === null || typeof current !== "object") return undefined;
-    if (!Object.hasOwn(current, part)) return undefined;
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
-}
-
-/**
- * 默认 AST-04 门控求值（equals/in/truthy 基础实现）：
- * 字段值从门禁上下文按 dot-path 实际解析并与条件值比较；未知算子与
- * custom（需要宿主注册自定义求值器）一律 fail-closed 返回 false。
- */
-export function defaultGatingEvaluator(
-  condition: { field: string; operator: string; value?: unknown; evaluatorId?: string },
-  context?: unknown,
-): boolean {
-  if (!condition || typeof condition.field !== "string" || !condition.field) return false;
-  const resolved = resolveGatingField(context, condition.field);
-  if (resolved === undefined) return false;
-  switch (condition.operator) {
-    case "truthy":
-      return Boolean(resolved);
-    case "equals":
-      if (typeof resolved === "object" && typeof condition.value === "object") {
-        return JSON.stringify(resolved ?? null) === JSON.stringify(condition.value ?? null);
-      }
-      return resolved === condition.value;
-    case "in":
-      return Array.isArray(condition.value) && (condition.value as unknown[]).includes(resolved);
-    case "custom":
-      return false;
-    default:
-      return false;
-  }
-}
-
-function gatingAllows(conditions: unknown, context?: unknown): boolean {
-  if (conditions == null) return true;
-  return Array.isArray(conditions) && conditions.every(c => defaultGatingEvaluator(c, context));
 }
 
 /** 纯内存工具注册表（供独立 CLI / Desktop 或测试使用） */
