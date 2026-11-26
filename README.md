@@ -212,8 +212,10 @@ console.log(result.status, result.stepsTaken); // completed 2
 
 [Aervox-harness](https://github.com/3yearsZhuang/Aervox-harness) 将本仓库作为 `packages/core` Git submodule 固定到确定提交，并按 `@aervox/core` workspace 包消费。内核变更在本仓库的 `feat/`、`fix/` 或 `docs/` 分支审查；主仓另用 PR 更新 gitlink，并验证锁文件与实际下游。
 
+下列命令在**宿主仓**（Aervox-harness）根目录执行，不要在本仓库内执行——本仓库即被初始化的那个子模块，路径不在自身树内：
+
 ```sh
-git submodule update --init packages/core
+git submodule update --init -- packages/core
 mise exec -- pnpm install --frozen-lockfile
 ```
 
